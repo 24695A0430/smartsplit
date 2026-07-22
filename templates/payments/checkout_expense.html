@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+
+{% block title %}Expense Checkout - SmartSplit Gateway{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <!-- Main Checkout card -->
+        <div class="premium-card p-4 position-relative" id="checkoutContainer">
+            <h5 class="fw-bold mb-4 text-center"><i class="fa-solid fa-shield-halved text-primary me-2"></i>Secure Expense Payment Terminal</h5>
+            
+            <div class="p-3 bg-light rounded-3 mb-4 d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="text-muted small d-block">Group Expense</span>
+                    <span class="fw-bold text-dark fs-5">{{ expense.title }}</span>
+                    <span class="text-muted small d-block">Group: {{ group.name }}</span>
+                    <span class="badge bg-secondary-subtle text-secondary mt-1">{{ expense.category }}</span>
+                </div>
+                <div class="text-end">
+                    <span class="text-muted small d-block">Amount Due</span>
+                    <span class="fw-bold text-primary fs-4">₹{{ expense.amount }}</span>
+                </div>
+            </div>
+
+            <!-- Payment tabs -->
+            <ul class="nav nav-pills nav-fill mb-3" id="pills-tab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active btn-sm" id="pills-card-tab" data-bs-toggle="pill" data-bs-target="#pills-card" type="button" role="tab"><i class="fa-solid fa-credit-card me-2"></i>Card</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link btn-sm" id="pills-upi-tab" data-bs-toggle="pill" data-bs-target="#pills-upi" type="button" role="tab"><i class="fa-solid fa-mobile-screen me-2"></i>UPI</button>
+                </li>
+            </ul>
+
+            <form action="{% url 'payments:process_expense_payment' %}" method="POST" id="checkoutForm">
+                {% csrf_token %}
+                <input type="hidden" name="payment_method" id="selectedMethod" value="CREDIT">
+                <input type="hidden" name="simulate_status" id="simulateStatus" value="SUCCESS">
+
+                <div class="tab-content" id="pills-tabContent">
+                    <!-- Card Details Tab -->
+                    <div class="tab-pane fade show active" id="pills-card" role="tabpanel">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">Cardholder Name</label>
+                            <input type="text" class="form-control" placeholder="E.g. Ravi Kumar" id="cardName">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">Card Number</label>
+                            <input type="text" class="form-control" placeholder="XXXX XXXX XXXX XXXX" id="cardNumber" maxlength="19">
+                        </div>
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label text-muted small">Expiry Date</label>
+                                <input type="text" class="form-control" placeholder="MM/YY" id="cardExpiry" maxlength="5">
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label text-muted small">CVV</label>
+                                <input type="password" class="form-control" placeholder="***" id="cardCvv" maxlength="3">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- UPI Tab -->
+                    <div class="tab-pane fade" id="pills-upi" role="tabpanel">
+                        <div class="alert alert-info py-2 mb-3 small">
+                            <i class="fa-solid fa-circle-info me-1"></i> Pay for this group expense directly via UPI (PhonePe, GPay, Paytm). 
+                            <br>Enter the **Merchant / Shop UPI ID** below:
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">Merchant's UPI ID</label>
+                            <input type="text" class="form-control" placeholder="E.g. shop@upi or petrolpump@upi" id="merchantUpiId" oninput="updateRealExpenseUpi()">
+                        </div>
+
+                        <!-- Real UPI Transaction Container (QR code and Mobile Deep Link) -->
+                        <div id="upiRealSection" class="text-center mt-4 p-3 border rounded bg-light" style="display: none;">
+                            <div class="mb-3">
+                                <img id="upiQrCode" src="" alt="Scan to Pay" class="img-fluid border p-2 bg-white" style="width: 200px; height: 200px;">
+                                <div class="small text-muted mt-2"><i class="fa-solid fa-qrcode me-1"></i>Scan using PhonePe, Google Pay, or Paytm</div>
+                            </div>
+                            <div class="d-grid mb-2">
+                                <a id="upiMobileLink" href="#" class="btn btn-success"><i class="fa-solid fa-mobile-screen me-2"></i>Pay via UPI App (Mobile)</a>
+                            </div>
+                            
+                            <div class="border-top my-3 pt-3">
+                                <p class="text-muted small mb-2"><i class="fa-solid fa-circle-check text-success me-1"></i>Once you complete the payment on your UPI app, click below to log this expense in your group.</p>
+                                <button type="button" class="btn btn-primary btn-sm w-100" onclick="submitRealExpensePayment()"><i class="fa-solid fa-file-invoice-dollar me-2"></i>Confirm Payment & Log Expense</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Simulation Trigger Buttons -->
+                <div class="mt-4 border-top pt-3 text-center" id="demoModeButtons">
+                    <p class="text-muted small mb-3"><i class="fa-solid fa-circle-info text-info me-1"></i>Demo Mode: Select simulation outcome below to test workflows.</p>
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-primary" onclick="submitSimulatedPayment('SUCCESS')"><i class="fa-solid fa-circle-check me-2"></i>Pay & Simulate Success</button>
+                        <button type="button" class="btn btn-outline-danger" onclick="submitSimulatedPayment('FAILED')"><i class="fa-solid fa-circle-xmark me-2"></i>Pay & Simulate Failure</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Processing Screen Overlay -->
+        <div class="premium-card p-5 text-center d-none" id="processingScreen">
+            <div class="spinner-border text-primary mb-4" role="status" style="width: 4rem; height: 4rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <h4 class="fw-bold mb-2">Processing Transaction...</h4>
+            <p class="text-muted">Do not close this window or hit back. Contacting mock banking servers...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const cardTab = document.getElementById("pills-card-tab");
+        const upiTab = document.getElementById("pills-upi-tab");
+        const methodInput = document.getElementById("selectedMethod");
+
+        cardTab.addEventListener("click", () => {
+            methodInput.value = "CREDIT";
+            document.getElementById("demoModeButtons").style.display = "block";
+        });
+        upiTab.addEventListener("click", () => {
+            methodInput.value = "UPI";
+            document.getElementById("demoModeButtons").style.display = "none";
+            updateRealExpenseUpi();
+        });
+
+        // Initialize on load
+        updateRealExpenseUpi();
+    });
+
+    function updateRealExpenseUpi() {
+        const merchantUpiField = document.getElementById("merchantUpiId");
+        let upiId = merchantUpiField ? merchantUpiField.value.trim() : "";
+        
+        const upiRealSection = document.getElementById("upiRealSection");
+        if (upiId && upiId.includes("@")) {
+            // Generate UPI Link
+            const amount = "{{ expense.amount }}";
+            const expenseTitle = encodeURIComponent("SmartSplit: {{ expense.title }}");
+            const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=Merchant&am=${amount}&cu=INR&tn=${expenseTitle}`;
+            
+            // Set link
+            document.getElementById("upiMobileLink").href = upiUri;
+            
+            // Set QR Code (using public API)
+            document.getElementById("upiQrCode").src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&margin=10&data=${encodeURIComponent(upiUri)}`;
+            
+            // Show section
+            upiRealSection.style.display = "block";
+        } else {
+            upiRealSection.style.display = "none";
+        }
+    }
+
+    function submitRealExpensePayment() {
+        document.getElementById("selectedMethod").value = "UPI";
+        document.getElementById("simulateStatus").value = "SUCCESS"; // Log the expense as fully paid & active
+        
+        // Hide checkout card, show loader screen
+        document.getElementById("checkoutContainer").classList.add("d-none");
+        document.getElementById("processingScreen").classList.remove("d-none");
+        
+        // Submit form after short processing delay
+        setTimeout(() => {
+            document.getElementById("checkoutForm").submit();
+        }, 1500);
+    }
+
+    function submitSimulatedPayment(status) {
+        // Validate basic fields
+        const method = document.getElementById("selectedMethod").value;
+        if (method === "CREDIT") {
+            const name = document.getElementById("cardName").value.trim();
+            const number = document.getElementById("cardNumber").value.trim();
+            const expiry = document.getElementById("cardExpiry").value.trim();
+            const cvv = document.getElementById("cardCvv").value.trim();
+            if (!name || !number || !expiry || !cvv) {
+                alert("Please fill out all card fields.");
+                return;
+            }
+        }
+
+        // Set status
+        document.getElementById("simulateStatus").value = status;
+
+        // Hide checkout card, show loader screen
+        document.getElementById("checkoutContainer").classList.add("d-none");
+        document.getElementById("processingScreen").classList.remove("d-none");
+
+        // Submit form after short processing delay
+        setTimeout(() => {
+            document.getElementById("checkoutForm").submit();
+        }, 2200);
+    }
+</script>
+{% endblock %}

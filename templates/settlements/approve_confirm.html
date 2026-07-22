@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirm Settlement Approval - SmartSplit{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="premium-card p-4">
+            <h5 class="fw-bold mb-4 text-success"><i class="fa-solid fa-circle-check me-2"></i>Approve Settlement Record</h5>
+            
+            <p>Confirm that you have received <strong>₹{{ settlement.amount }}</strong> from <strong>{{ settlement.debtor.username }}</strong> via manual transfer.</p>
+            <p class="text-muted small">By confirming, this payment will be marked as successful and applied to resolve group balances.</p>
+            
+            <form method="POST">
+                {% csrf_token %}
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'settlements:dashboard' settlement.group.id %}" class="btn btn-outline-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-success text-white">Approve & Settle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

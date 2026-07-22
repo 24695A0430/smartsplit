@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Settings & Profile - SmartSplit{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-4 mb-4">
+        <!-- User Profile Card -->
+        <div class="premium-card text-center p-4">
+            <div class="mb-3">
+                {% if user.profile.profile_picture %}
+                    <img src="{{ user.profile.profile_picture.url }}" alt="{{ user.username }}" class="rounded-circle img-thumbnail" style="width: 150px; height: 150px; object-fit: cover;">
+                {% else %}
+                    <img src="{% static 'images/default_user.png' %}" alt="{{ user.username }}" class="rounded-circle img-thumbnail" style="width: 150px; height: 150px; object-fit: cover;">
+                {% endif %}
+            </div>
+            <h4 class="fw-bold mb-1">{{ user.first_name }} {{ user.last_name }}</h4>
+            <p class="text-muted mb-3">@{{ user.username }}</p>
+            <div class="d-grid gap-2">
+                <a href="{% url 'accounts:change_password' %}" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-key me-2"></i>Change Password</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-8">
+        <!-- Edit Profile Form -->
+        <div class="premium-card p-4">
+            <h5 class="fw-bold mb-4"><i class="fa-solid fa-user-pen text-primary me-2"></i>Edit Profile Details</h5>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="id_first_name" class="form-label">First Name</label>
+                        {{ u_form.first_name }}
+                        {% if u_form.first_name.errors %}
+                            {% for error in u_form.first_name.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="id_last_name" class="form-label">Last Name</label>
+                        {{ u_form.last_name }}
+                        {% if u_form.last_name.errors %}
+                            {% for error in u_form.last_name.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="id_email" class="form-label">Email Address</label>
+                    {{ u_form.email }}
+                    {% if u_form.email.errors %}
+                        {% for error in u_form.email.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="id_phone_number" class="form-label">Phone Number</label>
+                    {{ p_form.phone_number }}
+                    {% if p_form.phone_number.errors %}
+                        {% for error in p_form.phone_number.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="id_upi_id" class="form-label">UPI ID</label>
+                    {{ p_form.upi_id }}
+                    <div class="form-text text-muted">Used for receiving real settlements from group members (e.g. <code>username@ybl</code>).</div>
+                    {% if p_form.upi_id.errors %}
+                        {% for error in p_form.upi_id.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <div class="mb-4">
+                    <label for="id_profile_picture" class="form-label">Profile Picture</label>
+                    {{ p_form.profile_picture }}
+                    {% if p_form.profile_picture.errors %}
+                        {% for error in p_form.profile_picture.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-2"></i>Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

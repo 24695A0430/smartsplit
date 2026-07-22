@@ -1,0 +1,33 @@
+{% extends 'base_auth.html' %}
+
+{% block content %}
+<form method="POST">
+    {% csrf_token %}
+    
+    <div class="mb-3">
+        <label for="id_username" class="form-label">Username</label>
+        <div class="input-group">
+            <span class="input-group-text"><i class="fa-solid fa-user text-muted"></i></span>
+            <input type="text" name="username" id="id_username" class="form-control" placeholder="Enter username" required>
+        </div>
+    </div>
+    
+    <div class="mb-3">
+        <div class="d-flex justify-content-between">
+            <label for="id_password" class="form-label">Password</label>
+            <a href="{% url 'accounts:forgot_password' %}" class="text-decoration-none small text-muted">Forgot Password?</a>
+        </div>
+        <div class="input-group">
+            <span class="input-group-text"><i class="fa-solid fa-lock text-muted"></i></span>
+            <input type="password" name="password" id="id_password" class="form-control" placeholder="Enter password" required>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100 mb-3">Login</button>
+    
+    <div class="text-center">
+        <span class="text-muted">Don't have an account? </span>
+        <a href="{% url 'accounts:register' %}" class="text-decoration-none fw-medium">Register</a>
+    </div>
+</form>
+{% endblock %}

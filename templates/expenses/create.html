@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+
+{% block title %}Log Expense - {{ group.name }} - SmartSplit{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="premium-card p-4">
+            <h5 class="fw-bold mb-4"><i class="fa-solid fa-receipt text-primary me-2"></i>Log Expense in {{ group.name }}</h5>
+            
+            <form method="POST" id="expenseForm">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <label for="id_title" class="form-label">Expense Title</label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                            {% for error in form.title.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="id_category" class="form-label">Category</label>
+                        {{ form.category }}
+                        {% if form.category.errors %}
+                            {% for error in form.category.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="id_amount" class="form-label">Total Amount (₹)</label>
+                        {{ form.amount }}
+                        {% if form.amount.errors %}
+                            {% for error in form.amount.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="id_date" class="form-label">Date</label>
+                        {{ form.date }}
+                        {% if form.date.errors %}
+                            {% for error in form.date.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="id_paid_by" class="form-label">Paid By</label>
+                        {{ form.paid_by }}
+                        {% if form.paid_by.errors %}
+                            {% for error in form.paid_by.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="id_split_type" class="form-label">Split Method</label>
+                        {{ form.split_type }}
+                        {% if form.split_type.errors %}
+                            {% for error in form.split_type.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Dynamic Split Layout -->
+                <div class="card p-3 mb-4 bg-light border-0">
+                    <h6 class="fw-bold mb-3">Split with Members</h6>
+                    
+                    <div class="list-group list-group-flush" id="membersSplitList">
+                        {% for m in members %}
+                            <div class="list-group-item bg-transparent px-0 py-2 border-0 border-bottom d-flex align-items-center justify-content-between">
+                                <div class="form-check mb-0">
+                                    <input class="form-check-input split-member-check" type="checkbox" name="split_members" value="{{ m.id }}" id="check_m_{{ m.id }}" checked>
+                                    <label class="form-check-label fw-medium text-dark small" for="check_m_{{ m.id }}">
+                                        {{ m.first_name }} {{ m.last_name }} (@{{ m.username }})
+                                    </label>
+                                </div>
+                                
+                                <div class="split-input-box" style="width: 120px;">
+                                    <!-- Custom Amount Input -->
+                                    <input type="number" step="0.01" class="form-control form-control-sm text-end custom-val-input custom-amount-input d-none" name="custom_amount_{{ m.id }}" placeholder="0.00" value="0.00">
+                                    <!-- Percentage Input -->
+                                    <input type="number" step="0.01" class="form-control form-control-sm text-end custom-val-input percent-input d-none" name="percent_{{ m.id }}" placeholder="0.0" value="0">
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Split Feedback Counter -->
+                    <div class="mt-3 text-end d-none" id="splitFeedbackBlock">
+                        <span class="fw-bold small" id="splitFeedbackText"></span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="id_description" class="form-label">Description (Optional)</label>
+                    {{ form.description }}
+                </div>
+
+                <div class="mb-4">
+                    <label for="id_notes" class="form-label">Notes (Optional)</label>
+                    {{ form.notes }}
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="{% url 'groups:detail' group.id %}" class="btn btn-outline-secondary">Cancel</a>
+                    <div class="d-flex gap-2">
+                        <button type="submit" name="action" value="save_manual" class="btn btn-outline-primary" id="submitBtn"><i class="fa-solid fa-receipt me-2"></i>Log Manually (Offline)</button>
+                        <button type="submit" name="action" value="pay_now" class="btn btn-primary" id="payBtn"><i class="fa-solid fa-credit-card me-2"></i>Pay Online Now</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Frontend Split Calculations script -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const splitTypeSelect = document.getElementById("id_split_type");
+        const amountInput = document.getElementById("id_amount");
+        const memberChecks = document.querySelectorAll(".split-member-check");
+        const customAmountInputs = document.querySelectorAll(".custom-amount-input");
+        const percentInputs = document.querySelectorAll(".percent-input");
+        
+        const feedbackBlock = document.getElementById("splitFeedbackBlock");
+        const feedbackText = document.getElementById("splitFeedbackText");
+        const form = document.getElementById("expenseForm");
+
+        function updateFieldsVisibility() {
+            const method = splitTypeSelect.value;
+            
+            customAmountInputs.forEach(el => el.classList.add("d-none"));
+            percentInputs.forEach(el => el.classList.add("d-none"));
+            feedbackBlock.classList.add("d-none");
+
+            if (method === "CUSTOM") {
+                customAmountInputs.forEach(el => el.classList.remove("d-none"));
+                feedbackBlock.classList.remove("d-none");
+            } else if (method === "PERCENT") {
+                percentInputs.forEach(el => el.classList.remove("d-none"));
+                feedbackBlock.classList.remove("d-none");
+            }
+            calculateTotals();
+        }
+
+        function calculateTotals() {
+            const method = splitTypeSelect.value;
+            const totalAmount = parseFloat(amountInput.value) || 0;
+
+            if (method === "CUSTOM") {
+                let sum = 0;
+                memberChecks.forEach(ch => {
+                    if (ch.checked) {
+                        const mId = ch.value;
+                        const input = document.getElementsByName("custom_amount_" + mId)[0];
+                        sum += parseFloat(input.value) || 0;
+                    }
+                });
+                const diff = (totalAmount - sum).toFixed(2);
+                feedbackText.innerHTML = `Sum of shares: ₹${sum.toFixed(2)} / ₹${totalAmount.toFixed(2)} (Remaining: ₹${diff})`;
+                if (Math.abs(diff) < 0.01) {
+                    feedbackText.className = "fw-bold small text-success";
+                } else {
+                    feedbackText.className = "fw-bold small text-danger";
+                }
+            } else if (method === "PERCENT") {
+                let sum = 0;
+                memberChecks.forEach(ch => {
+                    if (ch.checked) {
+                        const mId = ch.value;
+                        const input = document.getElementsByName("percent_" + mId)[0];
+                        sum += parseFloat(input.value) || 0;
+                    }
+                });
+                const diff = (100 - sum).toFixed(1);
+                feedbackText.innerHTML = `Sum of percentages: ${sum.toFixed(1)}% / 100% (Remaining: ${diff}%)`;
+                if (Math.abs(100 - sum) < 0.01) {
+                    feedbackText.className = "fw-bold small text-success";
+                } else {
+                    feedbackText.className = "fw-bold small text-danger";
+                }
+            }
+        }
+
+        splitTypeSelect.addEventListener("change", updateFieldsVisibility);
+        amountInput.addEventListener("input", calculateTotals);
+        memberChecks.forEach(ch => ch.addEventListener("change", calculateTotals));
+        
+        document.querySelectorAll(".custom-val-input").forEach(el => {
+            el.addEventListener("input", calculateTotals);
+        });
+
+        // Initialize view
+        updateFieldsVisibility();
+    });
+</script>
+{% endblock %}

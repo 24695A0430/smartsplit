@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}Financial Reports - SmartSplit{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-md-6 mb-3 mb-md-0">
+        <h3 class="fw-bold text-dark">Reports & Exports</h3>
+        <p class="text-muted mb-0">Compile expense lists and export them to PDF or Excel formats.</p>
+    </div>
+</div>
+
+<!-- Filters Panel -->
+<div class="premium-card p-4 mb-4 bg-white">
+    <form method="GET" action="{% url 'reports:index' %}" id="reportFilterForm" class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label text-muted small">Select Group</label>
+            <select name="group" id="reportGroupSelect" class="form-select" onchange="submitFilters()">
+                <option value="">All Groups</option>
+                {% for g in groups %}
+                    <option value="{{ g.id }}" {% if selected_group_id == g.id %}selected{% endif %}>{{ g.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="col-md-4">
+            <label class="form-label text-muted small">Select Month</label>
+            <input type="month" name="month" class="form-control" value="{{ selected_month }}" onchange="submitFilters()">
+        </div>
+        
+        <div class="col-md-4">
+            <label class="form-label text-muted small">Select Member</label>
+            <select name="member" class="form-select" onchange="submitFilters()" {% if not selected_group_id %}disabled title="Select a group first to filter by member"{% endif %}>
+                <option value="">All Members</option>
+                {% for m in members %}
+                    <option value="{{ m.id }}" {% if selected_member_id == m.id %}selected{% endif %}>{{ m.username }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </form>
+
+    <!-- Export Action Buttons -->
+    <div class="mt-4 border-top pt-3 d-flex justify-content-end gap-2">
+        <a href="{% url 'reports:export_pdf' %}?group={{ selected_group_id|default:'' }}&month={{ selected_month|default:'' }}&member={{ selected_member_id|default:'' }}" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-file-pdf me-2"></i>Export PDF</a>
+        <a href="{% url 'reports:export_excel' %}?group={{ selected_group_id|default:'' }}&month={{ selected_month|default:'' }}&member={{ selected_member_id|default:'' }}" class="btn btn-outline-success btn-sm"><i class="fa-solid fa-file-excel me-2"></i>Export Excel</a>
+    </div>
+</div>
+
+<!-- Preview Block -->
+<div class="premium-card bg-white p-4">
+    <h5 class="fw-bold mb-3"><i class="fa-solid fa-eye text-primary me-2"></i>Report Preview (Last 30 Items)</h5>
+    
+    <div class="table-responsive">
+        <table class="clean-table align-middle">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Expense Title</th>
+                    <th>Category</th>
+                    <th>Group</th>
+                    <th>Paid By</th>
+                    <th class="text-end">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for exp in expenses %}
+                    <tr>
+                        <td class="text-muted" style="white-space: nowrap;">{{ exp.date|date:"Y-m-d" }}</td>
+                        <td class="fw-medium text-dark">{{ exp.title }}</td>
+                        <td><span class="badge bg-light text-dark">{{ exp.category }}</span></td>
+                        <td>{{ exp.group.name }}</td>
+                        <td>{{ exp.paid_by.username }}</td>
+                        <td class="text-end fw-bold text-dark">₹{{ exp.amount }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-5">
+                            <i class="fa-solid fa-file-invoice-dollar mb-3" style="font-size: 40px;"></i>
+                            <p class="mb-0">No expenses logged matching selected filters.</p>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function submitFilters() {
+        document.getElementById("reportFilterForm").submit();
+    }
+</script>
+{% endblock %}

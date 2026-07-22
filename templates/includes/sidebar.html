@@ -1,0 +1,62 @@
+{% load static %}
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+        <i class="fa-solid fa-wallet text-primary me-2"></i>SmartSplit
+    </div>
+    
+    <ul class="sidebar-menu">
+        <li class="sidebar-item">
+            <a href="{% url 'dashboard:home' %}" class="sidebar-link {% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}">
+                <i class="fa-solid fa-chart-line"></i>Dashboard
+            </a>
+        </li>
+        <li class="sidebar-item">
+            <a href="{% url 'groups:list' %}" class="sidebar-link {% if request.resolver_match.app_name == 'groups' %}active{% endif %}">
+                <i class="fa-solid fa-users"></i>Groups
+            </a>
+        </li>
+        <li class="sidebar-item">
+            <a href="{% url 'payments:history' %}" class="sidebar-link {% if request.resolver_match.app_name == 'payments' and request.resolver_match.url_name == 'history' %}active{% endif %}">
+                <i class="fa-solid fa-money-bill-transfer"></i>Transactions
+            </a>
+        </li>
+        <li class="sidebar-item">
+            <a href="{% url 'reports:index' %}" class="sidebar-link {% if request.resolver_match.app_name == 'reports' %}active{% endif %}">
+                <i class="fa-solid fa-file-invoice-dollar"></i>Reports
+            </a>
+        </li>
+        <li class="sidebar-item">
+            <a href="{% url 'notifications:list' %}" class="sidebar-link {% if request.resolver_match.app_name == 'notifications' %}active{% endif %}">
+                <i class="fa-solid fa-bell"></i>Notifications
+                {% if unread_notifications_count > 0 %}
+                    <span class="badge bg-danger ms-auto">{{ unread_notifications_count }}</span>
+                {% endif %}
+            </a>
+        </li>
+        <li class="sidebar-item mt-4">
+            <hr style="border-color: rgba(255,255,255,0.08); margin: 0 10px;">
+        </li>
+        <li class="sidebar-item mt-2">
+            <a href="{% url 'accounts:profile' %}" class="sidebar-link {% if request.resolver_match.app_name == 'accounts' %}active{% endif %}">
+                <i class="fa-solid fa-user-gear"></i>Settings
+            </a>
+        </li>
+        <li class="sidebar-item">
+            <a href="{% url 'accounts:logout' %}" class="sidebar-link text-danger">
+                <i class="fa-solid fa-right-from-bracket"></i>Logout
+            </a>
+        </li>
+    </ul>
+
+    <div class="sidebar-user">
+        {% if user.profile.profile_picture %}
+            <img src="{{ user.profile.profile_picture.url }}" alt="{{ user.username }}" class="sidebar-user-img">
+        {% else %}
+            <img src="{% static 'images/default_user.png' %}" alt="{{ user.username }}" class="sidebar-user-img">
+        {% endif %}
+        <div class="sidebar-user-info">
+            <div class="sidebar-username">{{ user.first_name }} {{ user.last_name }}</div>
+            <div class="sidebar-user-role">@{{ user.username }}</div>
+        </div>
+    </div>
+</div>

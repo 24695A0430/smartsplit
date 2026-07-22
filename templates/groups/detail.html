@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ group.name }} - SmartSplit{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="row align-items-center mb-4">
+    <div class="col-md-7 mb-3 mb-md-0">
+        <div class="d-flex align-items-center gap-2">
+            <a href="{% url 'groups:list' %}" class="btn btn-outline-secondary btn-sm rounded-circle"><i class="fa-solid fa-arrow-left"></i></a>
+            <h3 class="fw-bold text-dark mb-0">{{ group.name }}</h3>
+        </div>
+        <p class="text-muted mb-0 mt-1">{{ group.description|default:"No description provided." }}</p>
+    </div>
+    <div class="col-md-5 text-md-end d-flex gap-2 justify-content-md-end">
+        <a href="{% url 'expenses:create' group.id %}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus me-2"></i>Log Expense</a>
+        <a href="{% url 'settlements:dashboard' group.id %}" class="btn btn-success btn-sm"><i class="fa-solid fa-scale-balanced me-2"></i>Settle Up</a>
+        {% if group.created_by == user %}
+            <a href="{% url 'groups:edit' group.id %}" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-pen-to-square"></i></a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <!-- Expenses Log -->
+    <div class="col-lg-8 mb-4">
+        <div class="premium-card p-4">
+            <h5 class="fw-bold mb-4"><i class="fa-solid fa-receipt text-primary me-2"></i>Expenses Log</h5>
+            
+            <div class="list-group list-group-flush">
+                {% for exp in expenses %}
+                    <div class="list-group-item px-0 py-3 border-0 border-bottom d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <!-- Category Icon -->
+                            <div class="rounded-3 d-flex align-items-center justify-content-center bg-light text-primary me-3" style="width: 48px; height: 48px; font-size: 20px;">
+                                {% if exp.category == 'Food' %}<i class="fa-solid fa-utensils"></i>
+                                {% elif exp.category == 'Travel' %}<i class="fa-solid fa-plane"></i>
+                                {% elif exp.category == 'Shopping' %}<i class="fa-solid fa-bag-shopping"></i>
+                                {% elif exp.category == 'Fuel' %}<i class="fa-solid fa-gas-pump"></i>
+                                {% elif exp.category == 'Rent' %}<i class="fa-solid fa-house"></i>
+                                {% elif exp.category == 'Bills' %}<i class="fa-solid fa-file-invoice"></i>
+                                {% elif exp.category == 'Entertainment' %}<i class="fa-solid fa-film"></i>
+                                {% else %}<i class="fa-solid fa-receipt"></i>{% endif %}
+                            </div>
+                            <div>
+                                <h6 class="fw-bold text-dark mb-1">
+                                    <a href="{% url 'expenses:detail' exp.id %}" class="text-decoration-none text-dark">{{ exp.title }}</a>
+                                </h6>
+                                <p class="text-muted mb-0 small">
+                                    Paid by <span class="fw-medium text-dark">{{ exp.paid_by.username }}</span> &middot; {{ exp.date|date:"M d, Y" }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="text-end d-flex align-items-center gap-3">
+                            <div>
+                                <span class="fw-bold text-dark d-block">₹{{ exp.amount }}</span>
+                                <span class="text-muted small">{{ exp.get_split_type_display }}</span>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-light rounded-circle" type="button" data-bs-toggle="dropdown"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="{% url 'expenses:detail' exp.id %}"><i class="fa-solid fa-eye me-2"></i>Details</a></li>
+                                    {% if exp.paid_by == user or group.created_by == user %}
+                                        <li><a class="dropdown-item" href="{% url 'expenses:edit' exp.id %}"><i class="fa-solid fa-pencil me-2"></i>Edit</a></li>
+                                        <li><a class="dropdown-item text-danger" href="{% url 'expenses:delete' exp.id %}"><i class="fa-solid fa-trash me-2"></i>Delete</a></li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="text-center text-muted py-5">
+                        <i class="fa-solid fa-file-invoice-dollar mb-3" style="font-size: 40px;"></i>
+                        <p class="mb-0">No expenses logged in this group yet.</p>
+                        <a href="{% url 'expenses:create' group.id %}" class="btn btn-sm btn-outline-primary mt-3">Log First Expense</a>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Members & Invite Panel -->
+    <div class="col-lg-4">
+        <!-- Invite Card -->
+        <div class="premium-card p-4 mb-4">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-paper-plane text-primary me-2"></i>Invite Members</h5>
+            
+            <div class="mb-3">
+                <label class="form-label text-muted small uppercase">Invite Code</label>
+                <div class="input-group">
+                    <input type="text" class="form-control fw-bold text-center" value="{{ group.invite_code }}" readonly id="inviteCodeInput">
+                    <button class="btn btn-outline-secondary" onclick="copyInviteCode()"><i class="fa-solid fa-copy"></i></button>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label text-muted small uppercase">Invite Link</label>
+                <div class="input-group">
+                    <input type="text" class="form-control small" value="{{ invite_url }}" readonly id="inviteLinkInput">
+                    <button class="btn btn-outline-secondary" onclick="copyInviteLink()"><i class="fa-solid fa-copy"></i></button>
+                </div>
+            </div>
+
+            <div class="d-grid">
+                <a href="{{ whatsapp_share_url }}" target="_blank" class="btn btn-success text-white btn-sm"><i class="fa-brands fa-whatsapp me-2"></i>Share via WhatsApp</a>
+            </div>
+        </div>
+
+        <!-- Members List -->
+        <div class="premium-card p-4 mb-4">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-users text-primary me-2"></i>Members ({{ members|length }})</h5>
+            
+            <div class="list-group list-group-flush mb-3">
+                {% for member in members %}
+                    <div class="list-group-item px-0 py-2 border-0 d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            {% if member.user.profile.profile_picture %}
+                                <img src="{{ member.user.profile.profile_picture.url }}" alt="{{ member.user.username }}" class="rounded-circle me-2" style="width: 32px; height: 32px; object-fit: cover;">
+                            {% else %}
+                                <img src="{% static 'images/default_user.png' %}" alt="{{ member.user.username }}" class="rounded-circle me-2" style="width: 32px; height: 32px; object-fit: cover;">
+                            {% endif %}
+                            <div>
+                                <span class="fw-medium text-dark small">{{ member.user.first_name }} {{ member.user.last_name }}</span>
+                                <span class="text-muted d-block" style="font-size: 11px;">@{{ member.user.username }}</span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            {% if member.user == group.created_by %}
+                                <span class="badge bg-primary-subtle text-primary" style="font-size: 10px;">Creator</span>
+                            {% elif group.created_by == user %}
+                                <a href="{% url 'groups:remove_member' group.id member.user.id %}" class="btn btn-link text-danger btn-sm p-0"><i class="fa-solid fa-user-minus"></i></a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="d-grid pt-2 border-top">
+                {% if group.created_by != user %}
+                    <a href="{% url 'groups:leave' group.id %}" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-right-from-bracket me-2"></i>Leave Group</a>
+                {% else %}
+                    <a href="{% url 'groups:delete' group.id %}" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-trash me-2"></i>Delete Group</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function copyInviteCode() {
+        const copyText = document.getElementById("inviteCodeInput");
+        copyText.select();
+        copyText.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(copyText.value);
+        alert("Invite Code copied: " + copyText.value);
+    }
+    function copyInviteLink() {
+        const copyText = document.getElementById("inviteLinkInput");
+        copyText.select();
+        copyText.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(copyText.value);
+        alert("Invite Link copied!");
+    }
+</script>
+{% endblock %}

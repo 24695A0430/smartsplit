@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - SmartSplit{% endblock %}
+
+{% block content %}
+<!-- Quick Actions & Stats -->
+<div class="row align-items-center mb-4">
+    <div class="col-md-6 mb-3 mb-md-0">
+        <h3 class="fw-bold text-dark">Welcome back, {{ user.first_name }}!</h3>
+        <p class="text-muted mb-0">Here's what's happening with your shared budgets.</p>
+    </div>
+    <div class="col-md-6 text-md-end d-flex gap-2 justify-content-md-end">
+        <a href="{% url 'groups:create' %}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus me-2"></i>Create Group</a>
+        <!-- Join Group Form Trigger -->
+        <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#joinGroupModal"><i class="fa-solid fa-right-to-bracket me-2"></i>Join with Code</button>
+    </div>
+</div>
+
+<!-- Search Results Block -->
+{% if search_query %}
+<div class="premium-card p-4 mb-4">
+    <h5 class="fw-bold mb-3"><i class="fa-solid fa-magnifying-glass me-2 text-primary"></i>Search Results for "{{ search_query }}"</h5>
+    <div class="row">
+        <!-- Groups Found -->
+        <div class="col-md-4 mb-3">
+            <h6 class="fw-bold border-bottom pb-2">Groups ({{ search_results.groups|length }})</h6>
+            {% for g in search_results.groups %}
+                <div class="mb-2">
+                    <a href="{% url 'groups:detail' g.id %}" class="fw-medium text-decoration-none">{{ g.name }}</a>
+                </div>
+            {% empty %}
+                <p class="text-muted small">No groups found.</p>
+            {% endfor %}
+        </div>
+        <!-- Expenses Found -->
+        <div class="col-md-4 mb-3">
+            <h6 class="fw-bold border-bottom pb-2">Expenses ({{ search_results.expenses|length }})</h6>
+            {% for e in search_results.expenses %}
+                <div class="mb-2">
+                    <a href="{% url 'expenses:detail' e.id %}" class="fw-medium text-decoration-none">{{ e.title }}</a>
+                    <span class="text-muted small">in {{ e.group.name }} (₹{{ e.amount }})</span>
+                </div>
+            {% empty %}
+                <p class="text-muted small">No expenses found.</p>
+            {% endfor %}
+        </div>
+        <!-- Payments Found -->
+        <div class="col-md-4 mb-3">
+            <h6 class="fw-bold border-bottom pb-2">Payments ({{ search_results.payments|length }})</h6>
+            {% for p in search_results.payments %}
+                <div class="mb-2">
+                    <span class="fw-medium text-dark">₹{{ p.amount }}</span>
+                    <span class="text-muted small">from {{ p.paid_by.username }} to {{ p.paid_to.username }} ({{ p.status }})</span>
+                </div>
+            {% empty %}
+                <p class="text-muted small">No payments found.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Metrics Dashboard Cards -->
+<div class="row mb-4">
+    <div class="col-6 col-lg-3 mb-3">
+        <div class="premium-card p-3 metric-card">
+            <div class="text-muted small fw-medium">Total Groups</div>
+            <div class="fs-3 fw-bold text-dark mt-1">{{ total_groups }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3 mb-3">
+        <div class="premium-card p-3 metric-card paid">
+            <div class="text-muted small fw-medium">Total Paid</div>
+            <div class="fs-3 fw-bold text-primary mt-1">₹{{ total_paid }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3 mb-3">
+        <div class="premium-card p-3 metric-card owed">
+            <div class="text-muted small fw-medium">You Owe</div>
+            <div class="fs-3 fw-bold text-danger mt-1">₹{{ total_owed }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3 mb-3">
+        <div class="premium-card p-3 metric-card receivable">
+            <div class="text-muted small fw-medium">You are Owed</div>
+            <div class="fs-3 fw-bold text-success mt-1">₹{{ total_receivable }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-lg-7 mb-4">
+        <div class="premium-card p-4 h-100">
+            <h5 class="fw-bold mb-3">Monthly Expense Trend</h5>
+            <canvas id="monthlyTrendChart" height="220"></canvas>
+        </div>
+    </div>
+    <div class="col-lg-5 mb-4">
+        <div class="premium-card p-4 h-100">
+            <h5 class="fw-bold mb-3">Expenses by Category</h5>
+            <canvas id="categoryDistributionChart" height="220"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Pending & Recent Activity Row -->
+<div class="row">
+    <!-- Pending Settlements -->
+    <div class="col-lg-6 mb-4">
+        <div class="premium-card p-4 h-100">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-clock-rotate-left text-warning me-2"></i>Pending Approval</h5>
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>From</th>
+                            <th>Group</th>
+                            <th>Amount</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in pending_approvals %}
+                            <tr>
+                                <td>{{ s.debtor.username }}</td>
+                                <td>{{ s.group.name }}</td>
+                                <td class="fw-bold text-dark">₹{{ s.amount }}</td>
+                                <td class="text-end">
+                                    <form action="{% url 'settlements:approve' s.id %}" method="POST" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-success px-3">Approve</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">No pending settlement approvals.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Transactions -->
+    <div class="col-lg-6 mb-4">
+        <div class="premium-card p-4 h-100">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-list text-primary me-2"></i>Recent Expenses</h5>
+            <div class="list-group list-group-flush">
+                {% for exp in recent_expenses %}
+                    <div class="list-group-item px-0 py-3 border-0 border-bottom">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="fw-bold text-dark mb-1">{{ exp.title }}</h6>
+                                <p class="text-muted mb-0 small">Paid by {{ exp.paid_by.username }} in <a href="{% url 'groups:detail' exp.group.id %}" class="text-decoration-none">{{ exp.group.name }}</a></p>
+                            </div>
+                            <div class="text-end">
+                                <span class="fw-bold text-dark d-block">₹{{ exp.amount }}</span>
+                                <span class="text-muted small">{{ exp.date|date:"d M Y" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="text-center text-muted py-5">No recent expenses logged.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Join Group Modal -->
+<div class="modal fade" id="joinGroupModal" tabindex="-1" aria-labelledby="joinGroupModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content premium-card border-0">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="joinGroupModalLabel">Join Group</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'groups:join_code' %}" method="POST">
+                {% csrf_token %}
+                <div class="modal-body py-4">
+                    <div class="mb-3">
+                        <label for="invite_code" class="form-label">Invite Code</label>
+                        <input type="text" name="invite_code" id="invite_code" class="form-control" placeholder="E.g. XYZ12345" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Join Group</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Script -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Trend Chart
+        const trendCtx = document.getElementById('monthlyTrendChart').getContext('2d');
+        const monthsData = {{ months|safe }};
+        const monthlyTotalsData = {{ monthly_totals|safe }};
+
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: monthsData.length > 0 ? monthsData : ['No Data'],
+                datasets: [{
+                    label: 'Expense Share (₹)',
+                    data: monthlyTotalsData.length > 0 ? monthlyTotalsData : [0],
+                    borderColor: '#4F46E5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        // Category Chart
+        const catCtx = document.getElementById('categoryDistributionChart').getContext('2d');
+        const categoriesData = {{ categories|safe }};
+        const categoryTotalsData = {{ category_totals|safe }};
+
+        new Chart(catCtx, {
+            type: 'doughnut',
+            data: {
+                labels: categoriesData.length > 0 ? categoriesData : ['No Data'],
+                datasets: [{
+                    data: categoryTotalsData.length > 0 ? categoryTotalsData : [1],
+                    backgroundColor: [
+                        '#4F46E5', '#0EA5E9', '#10B981', '#F59E0B', 
+                        '#EF4444', '#8B5CF6', '#EC4899', '#64748B'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

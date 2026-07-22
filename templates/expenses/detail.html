@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}Expense Details - {{ expense.title }} - SmartSplit{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- Main Expense Details Card -->
+        <div class="premium-card p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-start mb-4">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-3 d-flex align-items-center justify-content-center bg-light text-primary me-3" style="width: 56px; height: 56px; font-size: 24px;">
+                        {% if expense.category == 'Food' %}<i class="fa-solid fa-utensils"></i>
+                        {% elif expense.category == 'Travel' %}<i class="fa-solid fa-plane"></i>
+                        {% elif expense.category == 'Shopping' %}<i class="fa-solid fa-bag-shopping"></i>
+                        {% elif expense.category == 'Fuel' %}<i class="fa-solid fa-gas-pump"></i>
+                        {% elif expense.category == 'Rent' %}<i class="fa-solid fa-house"></i>
+                        {% elif expense.category == 'Bills' %}<i class="fa-solid fa-file-invoice"></i>
+                        {% elif expense.category == 'Entertainment' %}<i class="fa-solid fa-film"></i>
+                        {% else %}<i class="fa-solid fa-receipt"></i>{% endif %}
+                    </div>
+                    <div>
+                        <h4 class="fw-bold text-dark mb-1">{{ expense.title }}</h4>
+                        <p class="text-muted mb-0 small">
+                            Group: <a href="{% url 'groups:detail' expense.group.id %}" class="text-decoration-none fw-medium">{{ expense.group.name }}</a> &middot; Logged on {{ expense.date|date:"F d, Y" }}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="text-end">
+                    <h3 class="fw-bold text-primary mb-0">₹{{ expense.amount }}</h3>
+                    <span class="badge bg-secondary-subtle text-secondary mt-1">{{ expense.get_split_type_display }}</span>
+                </div>
+            </div>
+
+            {% if expense.description %}
+                <div class="mb-4">
+                    <h6 class="fw-bold text-muted small uppercase">Description</h6>
+                    <p class="text-dark bg-light p-3 rounded-3">{{ expense.description }}</p>
+                </div>
+            {% endif %}
+
+            <div class="row mb-4 border-top pt-3">
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <h6 class="fw-bold text-muted small uppercase">Paid By</h6>
+                    <div class="d-flex align-items-center mt-2">
+                        <i class="fa-solid fa-circle-user text-primary fs-4 me-2"></i>
+                        <div>
+                            <span class="fw-bold text-dark d-block">{{ expense.paid_by.first_name }} {{ expense.paid_by.last_name }}</span>
+                            <span class="text-muted small">@{{ expense.paid_by.username }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if expense.notes %}
+                    <div class="col-md-6">
+                        <h6 class="fw-bold text-muted small uppercase">Notes</h6>
+                        <p class="text-muted small mt-1">{{ expense.notes }}</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="d-flex justify-content-between border-top pt-3">
+                <a href="{% url 'groups:detail' expense.group.id %}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-arrow-left me-2"></i>Back to Group</a>
+                {% if expense.paid_by == user or expense.group.created_by == user %}
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'expenses:edit' expense.id %}" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-pencil me-2"></i>Edit</a>
+                        <a href="{% url 'expenses:delete' expense.id %}" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-trash me-2"></i>Delete</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Splits Breakdowns -->
+        <div class="premium-card p-4">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-divide text-primary me-2"></i>Split Breakdown</h5>
+            
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Member</th>
+                            <th class="text-end">Percentage</th>
+                            <th class="text-end">Share Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sp in splits %}
+                            <tr class="{% if sp.user == user %}table-primary-subtle{% endif %}">
+                                <td>
+                                    <span class="fw-medium text-dark">{{ sp.user.first_name }} {{ sp.user.last_name }}</span>
+                                    <span class="text-muted small">(@{{ sp.user.username }})</span>
+                                    {% if sp.user == expense.paid_by %}
+                                        <span class="badge bg-primary-subtle text-primary ms-1" style="font-size: 9px;">Payer</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end text-muted">
+                                    {% if sp.percentage %}
+                                        {{ sp.percentage }}%
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td class="text-end fw-bold text-dark">₹{{ sp.amount }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

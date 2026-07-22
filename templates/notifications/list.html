@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Notifications - SmartSplit{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-md-6 mb-3 mb-md-0">
+        <h3 class="fw-bold text-dark">Notifications</h3>
+        <p class="text-muted mb-0">Stay updated on group activities, new expenses, and settlements.</p>
+    </div>
+    <div class="col-md-6 text-md-end">
+        <a href="{% url 'notifications:mark_all_read' %}" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-check-double me-2"></i>Mark all as read</a>
+    </div>
+</div>
+
+<!-- Notifications List -->
+<div class="premium-card p-4 bg-white">
+    <div class="list-group list-group-flush">
+        {% for n in notifications %}
+            <div class="list-group-item px-0 py-3 border-0 border-bottom d-flex justify-content-between align-items-start {% if not n.is_read %}bg-light-subtle{% endif %}">
+                <div class="d-flex align-items-start">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center bg-light text-primary me-3" style="width: 40px; height: 40px; font-size: 16px;">
+                        {% if "Joined" in n.title or "Member" in n.title %}
+                            <i class="fa-solid fa-user-plus"></i>
+                        {% elif "Expense" in n.title %}
+                            <i class="fa-solid fa-receipt"></i>
+                        {% elif "Payment" in n.title or "Approved" in n.title %}
+                            <i class="fa-solid fa-money-bill-transfer"></i>
+                        {% else %}
+                            <i class="fa-solid fa-bell"></i>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-1 {% if not n.is_read %}text-primary{% else %}text-dark{% endif %}">
+                            {{ n.title }}
+                            {% if not n.is_read %}
+                                <span class="badge bg-danger ms-1" style="font-size: 9px; padding: 2px 4px;">New</span>
+                            {% endif %}
+                        </h6>
+                        <p class="text-muted mb-0 small">{{ n.message }}</p>
+                        <span class="text-muted" style="font-size: 11px;">{{ n.created_at|date:"Y-m-d H:i" }}</span>
+                    </div>
+                </div>
+                
+                <div>
+                    {% if not n.is_read %}
+                        <a href="{% url 'notifications:mark_read' n.id %}" class="btn btn-link btn-sm text-decoration-none text-muted p-0"><i class="fa-solid fa-check fs-6"></i></a>
+                    {% endif %}
+                </div>
+            </div>
+        {% empty %}
+            <div class="text-center text-muted py-5">
+                <i class="fa-regular fa-bell-slash mb-3" style="font-size: 40px;"></i>
+                <p class="mb-0">No notifications found.</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

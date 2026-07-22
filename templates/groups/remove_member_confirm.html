@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}Remove Member - {{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="premium-card p-4 border-danger">
+            <h5 class="fw-bold mb-4 text-danger"><i class="fa-solid fa-user-minus me-2"></i>Remove Member</h5>
+            
+            <p>Are you sure you want to remove <strong>{{ member_user.username }}</strong> ({{ member_user.first_name }} {{ member_user.last_name }}) from the group <strong>"{{ group.name }}"</strong>?</p>
+            <p class="text-muted small">They will lose access to the group, but their existing logs and split records will be kept for balance calculation integrity.</p>
+            
+            <form method="POST">
+                {% csrf_token %}
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'groups:detail' group.id %}" class="btn btn-outline-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-danger">Confirm Removal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

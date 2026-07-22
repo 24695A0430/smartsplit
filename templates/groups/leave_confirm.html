@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}Leave Group - {{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="premium-card p-4 border-danger">
+            <h5 class="fw-bold mb-4 text-danger"><i class="fa-solid fa-right-from-bracket me-2"></i>Leave Group</h5>
+            
+            <p>Are you sure you want to leave the group <strong>"{{ group.name }}"</strong>?</p>
+            <p class="text-muted small">You will no longer be able to log expenses in this group or settle shares. Your historical expenses and split records will remain for balance tracking.</p>
+            
+            <form method="POST">
+                {% csrf_token %}
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'groups:detail' group.id %}" class="btn btn-outline-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-danger">Confirm Leave</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

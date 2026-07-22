@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Payment Success - SmartSplit{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="premium-card text-center p-5 bg-white">
+            {% if payment.status == 'PENDING' %}
+                <div class="success-icon-box bg-warning-subtle text-warning mb-3 d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 80px; height: 80px; font-size: 40px;">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                </div>
+                
+                <h3 class="fw-bold text-dark mb-1">Payment Logged!</h3>
+                <p class="text-muted">Your payment is awaiting confirmation from the recipient.</p>
+            {% else %}
+                <div class="success-icon-box bg-success-subtle text-success mb-3 d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 80px; height: 80px; font-size: 40px;">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                
+                <h3 class="fw-bold text-dark mb-1">Payment Successful!</h3>
+                <p class="text-muted">Your transaction was processed successfully.</p>
+            {% endif %}
+            
+            <div class="border-top border-bottom py-3 my-4 text-start">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Transaction ID:</span>
+                    <span class="fw-medium text-dark">{{ payment.transaction_id }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Recipient:</span>
+                    <span class="fw-medium text-dark">{{ payment.paid_to.first_name }} {{ payment.paid_to.last_name }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Amount:</span>
+                    <span class="fw-bold text-success">₹{{ payment.amount }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Payment Mode:</span>
+                    <span class="fw-medium text-dark">{{ payment.get_payment_method_display }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Date:</span>
+                    <span class="fw-medium text-dark">{{ payment.date|date:"F d, Y" }}</span>
+                </div>
+            </div>
+
+            <div class="d-grid gap-2">
+                <a href="{% url 'groups:detail' payment.group.id %}" class="btn btn-primary">Back to Group</a>
+                <a href="{% url 'dashboard:home' %}" class="btn btn-outline-secondary">Go to Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

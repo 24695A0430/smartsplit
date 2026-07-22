@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}Payment Failed - SmartSplit{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="premium-card text-center p-5 bg-white border-danger">
+            <div class="failed-icon-box">
+                <i class="fa-solid fa-circle-xmark"></i>
+            </div>
+            
+            <h3 class="fw-bold text-danger mb-1">Payment Failed</h3>
+            <p class="text-muted">The transaction was declined by the bank or simulator service.</p>
+            
+            <div class="border-top border-bottom py-3 my-4 text-start">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Transaction Reference:</span>
+                    <span class="fw-medium text-dark">{{ payment.transaction_id }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Recipient:</span>
+                    <span class="fw-medium text-dark">{{ payment.paid_to.username }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Amount Attempted:</span>
+                    <span class="fw-bold text-dark">₹{{ payment.amount }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Error Details:</span>
+                    <span class="text-danger small fw-medium">Simulation Failure Code 502</span>
+                </div>
+            </div>
+
+            <div class="d-grid gap-2">
+                <a href="{% url 'payments:checkout' payment.group.id payment.paid_to.id %}?amount={{ payment.amount }}" class="btn btn-primary">Try Again</a>
+                <a href="{% url 'groups:detail' payment.group.id %}" class="btn btn-outline-secondary">Return to Group</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

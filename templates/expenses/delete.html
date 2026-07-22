@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Expense - {{ expense.title }} - SmartSplit{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="premium-card p-4 border-danger">
+            <h5 class="fw-bold mb-4 text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Delete Expense</h5>
+            
+            <p>Are you sure you want to permanently delete the expense <strong>"{{ expense.title }}"</strong> of <strong>₹{{ expense.amount }}</strong> in <strong>"{{ expense.group.name }}"</strong>?</p>
+            <p class="text-danger small"><strong>Warning:</strong> This will delete all split mappings and recalculate balances for the group. This action cannot be undone.</p>
+            
+            <form method="POST">
+                {% csrf_token %}
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'expenses:detail' expense.id %}" class="btn btn-outline-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-danger">Confirm Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% load static %}
+<nav class="top-navbar">
+    <div class="d-flex align-items-center">
+        <button class="mobile-toggle me-3" id="mobile-sidebar-toggle">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <h4 class="fw-bold mb-0 text-dark">
+            {% block page_title %}
+                {% if request.resolver_match.app_name == 'dashboard' %}Dashboard
+                {% elif request.resolver_match.app_name == 'groups' %}Groups
+                {% elif request.resolver_match.app_name == 'expenses' %}Expenses
+                {% elif request.resolver_match.app_name == 'payments' %}Payments
+                {% elif request.resolver_match.app_name == 'settlements' %}Settlements
+                {% elif request.resolver_match.app_name == 'reports' %}Reports
+                {% elif request.resolver_match.app_name == 'notifications' %}Notifications
+                {% elif request.resolver_match.app_name == 'accounts' %}Account Settings
+                {% else %}SmartSplit
+                {% endif %}
+            {% endblock %}
+        </h4>
+    </div>
+
+    <!-- Search Form -->
+    <form action="{% url 'dashboard:home' %}" method="GET" class="d-none d-md-flex align-items-center bg-light rounded-pill px-3 py-1" style="width: 300px; border: 1px solid var(--border-color);">
+        <i class="fa-solid fa-magnifying-glass text-muted me-2"></i>
+        <input type="text" name="q" placeholder="Search groups, expenses..." class="form-control border-0 bg-transparent p-0" style="box-shadow: none; font-size: 14px;" value="{{ search_query|default:'' }}">
+    </form>
+
+    <div class="d-flex align-items-center gap-3">
+        <!-- Quick Notification Bell -->
+        <a href="{% url 'notifications:list' %}" class="position-relative text-dark" style="font-size: 18px;">
+            <i class="fa-regular fa-bell"></i>
+            {% if unread_notifications_count > 0 %}
+                <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
+                    <span class="visually-hidden">New alerts</span>
+                </span>
+            {% endif %}
+        </a>
+
+        <!-- Quick Profile Link -->
+        <a href="{% url 'accounts:profile' %}" class="text-decoration-none d-flex align-items-center gap-2">
+            {% if user.profile.profile_picture %}
+                <img src="{{ user.profile.profile_picture.url }}" alt="{{ user.username }}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color);">
+            {% else %}
+                <img src="{% static 'images/default_user.png' %}" alt="{{ user.username }}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-color);">
+            {% endif %}
+            <span class="d-none d-lg-inline text-dark fw-medium" style="font-size: 14px;">{{ user.username }}</span>
+        </a>
+    </div>
+</nav>
